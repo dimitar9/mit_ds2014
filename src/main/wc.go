@@ -21,7 +21,7 @@ type kv_string_value struct {
 func Map(value string) *list.List {
 
 	t := strings.FieldsFunc(value, extract_word)
-        fmt.Println("t:", len(t))
+        
         m := make(map[string]int)
 	for _, word  := range t{
         	m[word]++	
@@ -33,14 +33,23 @@ func Map(value string) *list.List {
                 pair.Key = k
                 pair.Value = strconv.Itoa(v)
 		x.PushBack(pair)
-		fmt.Println(pair)
+		//fmt.Println(pair)
 	}
 	return x
 }
 
 // iterate over list and add values
 func Reduce(key string, values *list.List) string {
-	return "hello"
+    sum := 0
+    for e := values.Front(); e != nil; e=e.Next() {
+        //fmt.Println(e.Value.(string))
+        cur_count,err := strconv.Atoi( e.Value.(string))
+        if err != nil {
+            fmt.Println("invalid string")
+        } 
+        sum =sum+ cur_count
+    }
+    return strconv.Itoa(sum)
 }
 
 // Can be run in 3 ways:

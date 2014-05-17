@@ -35,7 +35,7 @@ import "hash/fnv"
 // which Merge() merges into a single output.
 
 // Debugging
-const Debug = 1
+const Debug = 0
 
 func DPrintf(format string, a ...interface{}) (n int, err error) {
 	if Debug > 0 {
@@ -195,7 +195,7 @@ func DoMap(JobNumber int, fileName string,
 	nreduce int, Map func(string) *list.List) {
 	name := MapName(fileName, JobNumber)
 	file, err := os.Open(name)
-	DPrintf("name is %s\n", name)
+	//DPrintf("name is %s\n", name)
 	if err != nil {
 		log.Fatal("DoMap: ", err)
 	}
@@ -210,7 +210,7 @@ func DoMap(JobNumber int, fileName string,
 	if err != nil {
 		log.Fatal("DoMap: ", err)
 	}else {
- 	    DPrintf("Read succesful.\n")
+ 	    //DPrintf("Read succesful.\n")
 	}
           
 	file.Close()
@@ -279,6 +279,7 @@ func DoReduce(job int, fileName string, nmap int,
 	}
 	enc := json.NewEncoder(file)
 	for _, k := range keys {
+                
 		res := Reduce(k, kvs[k])
 		enc.Encode(KeyValue{k, res})
 	}
