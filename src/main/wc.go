@@ -6,6 +6,7 @@ import "mapreduce"
 import "container/list"
 import "strings"
 import "unicode"
+import "strconv"
 
 func extract_word(r rune) bool {
     return !unicode.IsLetter(r)
@@ -25,17 +26,15 @@ func Map(value string) *list.List {
 	for _, word  := range t{
         	m[word]++	
 	}
-	x := new(list.List)
+	x := list.New()
         
         for k,v := range m {
-		pair := kv_string_value{}
-                pair.str = k
-                pair.num = v
+		pair := mapreduce.KeyValue{}
+                pair.Key = k
+                pair.Value = strconv.Itoa(v)
 		x.PushBack(pair)
 		fmt.Println(pair)
 	}
-        fmt.Println("Good5")
-
 	return x
 }
 
