@@ -123,6 +123,7 @@ func port(suffix string) string {
 func setup() *MapReduce {
   file := makeInput()
   master := port("master")
+  DPrintf("DEBUG:!! ALERT:master (unix socket) is %s.\n", master)
   mr := MakeMapReduce(nMap, nReduce, file, master)
   return mr
 }

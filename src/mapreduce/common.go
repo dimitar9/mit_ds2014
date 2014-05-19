@@ -58,8 +58,10 @@ type RegisterReply struct {
 //
 func call(srv string, rpcname string,
           args interface{}, reply interface{}) bool {
+  DPrintf("common.go: srv is %s\n", srv)
   c, errx := rpc.Dial("unix", srv)
   if errx != nil {
+    fmt.Println("common.go call: Dial failed.")
     return false
   }
   defer c.Close()

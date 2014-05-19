@@ -49,6 +49,8 @@ func Register(master string, me string) {
   args := &RegisterArgs{}
   args.Worker = me
   var reply RegisterReply
+  DPrintf("Register:-- master is %s\n", master)
+  DPrintf("args %s\n", args)
   ok := call(master, "MapReduce.Register", args, &reply)
   if ok == false {
     fmt.Printf("Register: RPC %s register error\n", master)
@@ -67,6 +69,7 @@ func RunWorker(MasterAddress string, me string,
   wk.Reduce = ReduceFunc
   wk.nRPC = nRPC
   rpcs := rpc.NewServer()
+  DPrintf("Created rpc new server\n")
   rpcs.Register(wk)
   os.Remove(me)   // only needed for "unix"
   l, e := net.Listen("unix", me)

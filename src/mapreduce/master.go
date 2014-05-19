@@ -28,6 +28,5 @@ func (mr *MapReduce) KillWorkers() *list.List {
 
 func (mr *MapReduce) RunMaster() *list.List {
   // Your code here
-  RunWorker("127.0.0.1", "worker1", DoMap, DoReduce, 5)
   return mr.KillWorkers()
 }
