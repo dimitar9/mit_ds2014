@@ -67,6 +67,9 @@ type MapReduce struct {
 	// add any additional state here
 }
 
+
+
+
 func InitMapReduce(nmap int, nreduce int,
 	file string, master string) *MapReduce {
 	mr := new(MapReduce)
@@ -77,6 +80,9 @@ func InitMapReduce(nmap int, nreduce int,
 	mr.alive = true
 	mr.registerChannel = make(chan string)
 	mr.DoneChannel = make(chan bool)
+    mr.Workers = make(map[string]*WorkerInfo)
+	mr.Workers["worker0"]= port("worker0")
+
 
 	// initialize any additional state here
 	return mr
@@ -135,7 +141,9 @@ func (mr *MapReduce) StartRegistrationServer() {
 
 // Name of the file that is the input for map job <MapJob>
 func MapName(fileName string, MapJob int) string {
-	return "mrtmp." + fileName + "-" + strconv.Itoa(MapJob)
+	fstr := "mrtmp." + fileName + "-" + strconv.Itoa(MapJob)
+    //fmt.Printf("Mapname: %s.\n",fstr)
+	return fstr
 }
 
 // Split bytes of input file into nMap splits, but split only on white space
@@ -168,6 +176,7 @@ func (mr *MapReduce) Split(fileName string) {
 			writer.Flush()
 			outfile.Close()
 			outfile, err = os.Create(MapName(fileName, m))
+
 			writer = bufio.NewWriter(outfile)
 			m += 1
 		}

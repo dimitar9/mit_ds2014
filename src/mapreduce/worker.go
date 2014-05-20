@@ -54,7 +54,10 @@ func Register(master string, me string) {
   ok := call(master, "MapReduce.Register", args, &reply)
   if ok == false {
     fmt.Printf("Register: RPC %s register error\n", master)
+  } else {
+    fmt.Printf("Register RPC sucessful. %s.\n",master)
   }
+  fmt.Println("After Register")
 }
 
 // Set up a connection with the master, register with the master,

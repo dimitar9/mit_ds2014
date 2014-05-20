@@ -2,6 +2,8 @@ package mapreduce
 import "container/list"
 import "fmt"
 
+
+
 type WorkerInfo struct {
   address string
   // You can add definitions here.
@@ -27,6 +29,17 @@ func (mr *MapReduce) KillWorkers() *list.List {
 }
 
 func (mr *MapReduce) RunMaster() *list.List {
+	DPrintf("Runmaster.\n")
   // Your code here
+
+
+  args := &DoJobArgs{"824-mrinput.txt","DoMap",0,5}
+  var reply DoJobReply
+  var err bool
+
+  err = call(mr.Workers["worker0"].address, "Worker.DoJob", args, &reply)
+  if err  {
+  	fmt.Println("wk error:%d",err)
+  }
   return mr.KillWorkers()
 }
