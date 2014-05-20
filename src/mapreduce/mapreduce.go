@@ -81,7 +81,9 @@ func InitMapReduce(nmap int, nreduce int,
 	mr.registerChannel = make(chan string)
 	mr.DoneChannel = make(chan bool)
     mr.Workers = make(map[string]*WorkerInfo)
-	mr.Workers["worker0"]= port("worker0")
+	r := new (WorkerInfo)  
+	(*r).address =port("worker0")
+	mr.Workers["worker0"]= r
 
 
 	// initialize any additional state here
