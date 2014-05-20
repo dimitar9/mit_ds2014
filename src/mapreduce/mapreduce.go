@@ -81,9 +81,6 @@ func InitMapReduce(nmap int, nreduce int,
 	mr.registerChannel = make(chan string)
 	mr.DoneChannel = make(chan bool)
     mr.Workers = make(map[string]*WorkerInfo)
-	r := new (WorkerInfo)  
-	(*r).address =port("worker0")
-	mr.Workers["worker0"]= r
 
 
 	// initialize any additional state here
@@ -206,7 +203,7 @@ func DoMap(JobNumber int, fileName string,
 	nreduce int, Map func(string) *list.List) {
 	name := MapName(fileName, JobNumber)
 	file, err := os.Open(name)
-	//DPrintf("name is %s\n", name)
+	DPrintf("name is %s\n", name)
 	if err != nil {
 		log.Fatal("DoMap: ", err)
 	}
@@ -221,7 +218,7 @@ func DoMap(JobNumber int, fileName string,
 	if err != nil {
 		log.Fatal("DoMap: ", err)
 	}else {
- 	    //DPrintf("Read succesful.\n")
+ 	    DPrintf("Read succesful.\n")
 	}
           
 	file.Close()

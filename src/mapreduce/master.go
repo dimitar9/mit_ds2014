@@ -32,12 +32,19 @@ func (mr *MapReduce) RunMaster() *list.List {
 	DPrintf("Runmaster.\n")
   // Your code here
 
+  //r := new (WorkerInfo)  
+  var worker_str string
+  worker_str = <- mr.registerChannel 
+  fmt.Println("Initialize map reduce!!!!!!!")
+  fmt.Printf("worker_str is %s \n",worker_str)
+  //(*r).address =port(worker_str)
+ // mr.Workers[worker_str]= r
 
-  args := &DoJobArgs{"824-mrinput.txt","DoMap",0,5}
+  args := &DoJobArgs{"824-mrinput.txt","Map",0,5}
   var reply DoJobReply
   var err bool
 
-  err = call(mr.Workers["worker0"].address, "Worker.DoJob", args, &reply)
+  err = call(worker_str, "Worker.DoJob", args, &reply)
   if err  {
   	fmt.Println("wk error:%d",err)
   }
