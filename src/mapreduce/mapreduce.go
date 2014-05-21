@@ -35,7 +35,7 @@ import "hash/fnv"
 // which Merge() merges into a single output.
 
 // Debugging
-const Debug = 0
+const Debug = 1
 
 func DPrintf(format string, a ...interface{}) (n int, err error) {
 	if Debug > 0 {
@@ -65,6 +65,7 @@ type MapReduce struct {
 	Workers map[string]*WorkerInfo
 
 	// add any additional state here
+	workerNumber    int
 }
 
 
@@ -80,7 +81,7 @@ func InitMapReduce(nmap int, nreduce int,
 	mr.registerChannel = make(chan string)
 	mr.DoneChannel = make(chan bool)
     mr.Workers = make(map[string]*WorkerInfo)
-
+    mr.workerNumber = 0
 
 	// initialize any additional state here
 	
@@ -97,7 +98,9 @@ func MakeMapReduce(nmap int, nreduce int,
 
 func (mr *MapReduce) Register(args *RegisterArgs, res *RegisterReply) error {
 	DPrintf("Register: worker %s\n", args.Worker)
+	mr.workerNumber = mr.workerNumber + 1
 	mr.registerChannel <- args.Worker
+	
 	res.OK = true
 	return nil
 }
