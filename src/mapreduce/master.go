@@ -2,7 +2,7 @@ package mapreduce
 import "container/list"
 import "fmt"
 
-
+//http://css.csail.mit.edu/6.824/2014/labs/lab-1.html
 
 type WorkerInfo struct {
   address string
@@ -36,10 +36,15 @@ func (mr *MapReduce) RunMaster() *list.List {
   
   //loop thru Map workers
 
-  worker_str = <- mr.registerChannel
-
+  var worker_str_good string
+  
   for i := 0; i < mr.nMap; i++ {
-    
+    DPrintf("worker number is %d\n", mr.workerNumber)
+    if mr.workerNumber >0 {
+      worker_str = <- mr.registerChannel
+      worker_str_good = worker_str
+      mr.workerNumber -= 1
+    } 
     DPrintf("Worker_str is %s \n",worker_str)
 
     args := &DoJobArgs{mr.file,"Map",i,mr.nReduce}
@@ -53,13 +58,19 @@ func (mr *MapReduce) RunMaster() *list.List {
       fmt.Println("wk worker fail.\n")
     }
     DPrintf("map finished.")
+    
   }
 
 
-  worker_str = <- mr.registerChannel
+
   for i := 0; i < mr.nReduce; i++ {
     //worker_str = <- mr.registerChannel
-
+    if mr.workerNumber >0 {
+      worker_str = <- mr.registerChannel
+      mr.workerNumber -= 1
+    } else {
+      worker_str = worker_str_good
+    }
     args_reduce := &DoJobArgs{mr.file,"Reduce",i,mr.nMap}
     var reply DoJobReply
     var ret bool
@@ -72,6 +83,7 @@ func (mr *MapReduce) RunMaster() *list.List {
     }
 
     DPrintf("reduce finished.")
+    
   }
 
   return mr.KillWorkers()
