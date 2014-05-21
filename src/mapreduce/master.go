@@ -32,21 +32,36 @@ func (mr *MapReduce) RunMaster() *list.List {
 	DPrintf("Runmaster.\n")
   // Your code here
 
-  //r := new (WorkerInfo)  
   var worker_str string
-  worker_str = <- mr.registerChannel 
-  fmt.Println("Initialize map reduce!!!!!!!")
-  fmt.Printf("worker_str is %s \n",worker_str)
-  //(*r).address =port(worker_str)
- // mr.Workers[worker_str]= r
+  
+  //loop thru Map workers
 
-  args := &DoJobArgs{"824-mrinput.txt","Map",0,5}
+    
+  worker_str = <- mr.registerChannel
+  DPrintf("Worker_str is %s \n",worker_str)
+
+  args := &DoJobArgs{mr.file,"Map",0,1}//mr.nReduce}
   var reply DoJobReply
-  var err bool
-
-  err = call(worker_str, "Worker.DoJob", args, &reply)
-  if err  {
-  	fmt.Println("wk error:%d",err)
+  var ret bool
+  ret = call(worker_str, "Worker.DoJob", args, &reply)
+  if ret  {
+  	fmt.Println("wk worker done.\n")
+  } else
+  {
+    fmt.Println("wk worker fail.\n")
   }
+  DPrintf("map finished.")
+
+
+  args_reduce := &DoJobArgs{mr.file,"Reduce",0,1}//mr.nMap}
+  ret = call(worker_str, "Worker.DoJob", args_reduce, &reply)
+  if ret  {
+    fmt.Println("wk reduce worker done.\n")
+  } else
+  {
+    fmt.Println("wk reduce worker fail.\n")
+  }
+
+  DPrintf("reduce finished.")
   return mr.KillWorkers()
 }

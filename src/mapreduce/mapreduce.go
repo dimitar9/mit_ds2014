@@ -69,7 +69,6 @@ type MapReduce struct {
 
 
 
-
 func InitMapReduce(nmap int, nreduce int,
 	file string, master string) *MapReduce {
 	mr := new(MapReduce)
@@ -84,6 +83,7 @@ func InitMapReduce(nmap int, nreduce int,
 
 
 	// initialize any additional state here
+	
 	return mr
 }
 
@@ -225,6 +225,7 @@ func DoMap(JobNumber int, fileName string,
 	res := Map(string(b))
 	// XXX a bit inefficient. could open r files and run over list once
 	for r := 0; r < nreduce; r++ {
+		DPrintf("Count.!")
 		file, err = os.Create(ReduceName(fileName, JobNumber, r))
 		if err != nil {
 			log.Fatal("DoMap: create ", err)
@@ -242,6 +243,11 @@ func DoMap(JobNumber int, fileName string,
 		}
 		file.Close()
 	}
+	
+    
+	DPrintf("out.!")
+    
+    return  
 }
 
 func MergeName(fileName string, ReduceJob int) string {

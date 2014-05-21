@@ -68,9 +68,9 @@ func call(srv string, rpcname string,
   DPrintf("rpcname is %s \n", rpcname)
   err := c.Call(rpcname, args, reply)
   if err == nil {
+    DPrintf("rpcname.Call return is true")
     return true
   }
 
-  fmt.Println(err)
   return false
 }
