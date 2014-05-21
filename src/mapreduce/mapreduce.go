@@ -287,6 +287,7 @@ func DoReduce(job int, fileName string, nmap int,
 	}
 	sort.Strings(keys)
 	p := MergeName(fileName, job)
+	DPrintf("mergename p is %s\n", p)
 	file, err := os.Create(p)
 	if err != nil {
 		log.Fatal("DoReduce: create ", err)
