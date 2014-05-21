@@ -50,6 +50,7 @@ func Register(master string, me string) {
   args.Worker = me
   var reply RegisterReply
   DPrintf("Register:-- master is %s\n", master)
+  DPrintf("Register:-- me is %s\n", me)
   DPrintf("args %s\n", args)
   ok := call(master, "MapReduce.Register", args, &reply)
   if ok == false {
