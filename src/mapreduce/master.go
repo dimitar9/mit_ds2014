@@ -32,19 +32,14 @@ func (mr *MapReduce) RunMaster() *list.List {
 	DPrintf("Runmaster.\n")
   // Your code here
 
-  var worker_str string
+  // var worker_str string
   
   //loop thru Map workers
-
-  var worker_str_good string
-  
   for i := 0; i < mr.nMap; i++ {
     DPrintf("worker number is %d\n", mr.workerNumber)
-    if mr.workerNumber >0 {
-      worker_str = <- mr.registerChannel
-      worker_str_good = worker_str
-      mr.workerNumber -= 1
-    } 
+
+    worker_str := <- mr.registerChannel
+
     DPrintf("Worker_str is %s \n",worker_str)
 
     args := &DoJobArgs{mr.file,"Map",i,mr.nReduce}
@@ -53,36 +48,36 @@ func (mr *MapReduce) RunMaster() *list.List {
     ret = call(worker_str, "Worker.DoJob", args, &reply)
     if ret  {
     	fmt.Println("wk worker done.\n")
+      fmt.Println(worker_str)
+      mr.registerChannel <- worker_str
     } else
     {
       fmt.Println("wk worker fail.\n")
     }
+
     DPrintf("map finished.")
-    
+
   }
 
 
 
   for i := 0; i < mr.nReduce; i++ {
-    //worker_str = <- mr.registerChannel
-    if mr.workerNumber >0 {
-      worker_str = <- mr.registerChannel
-      mr.workerNumber -= 1
-    } else {
-      worker_str = worker_str_good
-    }
+    worker_str := <- mr.registerChannel
+
     args_reduce := &DoJobArgs{mr.file,"Reduce",i,mr.nMap}
     var reply DoJobReply
     var ret bool
     ret = call(worker_str, "Worker.DoJob", args_reduce, &reply)
     if ret  {
       fmt.Println("wk reduce worker done.\n")
+      mr.registerChannel <- worker_str
     } else
     {
       fmt.Println("wk reduce worker fail.\n")
     }
 
     DPrintf("reduce finished.")
+
     
   }
 

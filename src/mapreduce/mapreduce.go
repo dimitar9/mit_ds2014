@@ -78,7 +78,7 @@ func InitMapReduce(nmap int, nreduce int,
 	mr.file = file
 	mr.MasterAddress = master
 	mr.alive = true
-	mr.registerChannel = make(chan string)
+	mr.registerChannel = make(chan string, 2)
 	mr.DoneChannel = make(chan bool)
     mr.Workers = make(map[string]*WorkerInfo)
     mr.workerNumber = 0
