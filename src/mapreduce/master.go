@@ -37,24 +37,27 @@ func (mr *MapReduce) RunMaster() *list.List {
   //loop thru Map workers
   for i := 0; i < mr.nMap; i++ {
     DPrintf("worker number is %d\n", mr.workerNumber)
+    var sucess bool
+    sucess = false
+    for ; sucess != true;  {
+      worker_str := <- mr.registerChannel
 
-    worker_str := <- mr.registerChannel
+      DPrintf("Worker_str is %s \n",worker_str)
 
-    DPrintf("Worker_str is %s \n",worker_str)
-
-    args := &DoJobArgs{mr.file,"Map",i,mr.nReduce}
-    var reply DoJobReply
-    var ret bool
-    ret = call(worker_str, "Worker.DoJob", args, &reply)
-    if ret  {
-    	fmt.Println("wk worker done.\n")
-      fmt.Println(worker_str)
-      mr.registerChannel <- worker_str
-    } else
-    {
-      fmt.Println("wk worker fail.\n")
+      args := &DoJobArgs{mr.file,"Map",i,mr.nReduce}
+      var reply DoJobReply
+      var ret bool
+      ret = call(worker_str, "Worker.DoJob", args, &reply)
+      if ret  {
+      	fmt.Println("wk worker done.\n")
+        fmt.Println(worker_str)
+        mr.registerChannel <- worker_str
+        sucess = true
+      } else
+      {
+        fmt.Println("wk workerfail.\n")
+      }
     }
-
     DPrintf("map finished.")
 
   }
@@ -62,20 +65,24 @@ func (mr *MapReduce) RunMaster() *list.List {
 
 
   for i := 0; i < mr.nReduce; i++ {
-    worker_str := <- mr.registerChannel
+    var reduce_sucess bool
+    reduce_sucess = false
+    for ; reduce_sucess != true;  {
+      worker_str := <- mr.registerChannel
 
-    args_reduce := &DoJobArgs{mr.file,"Reduce",i,mr.nMap}
-    var reply DoJobReply
-    var ret bool
-    ret = call(worker_str, "Worker.DoJob", args_reduce, &reply)
-    if ret  {
-      fmt.Println("wk reduce worker done.\n")
-      mr.registerChannel <- worker_str
-    } else
-    {
-      fmt.Println("wk reduce worker fail.\n")
+      args_reduce := &DoJobArgs{mr.file,"Reduce",i,mr.nMap}
+      var reply DoJobReply
+      var ret bool
+      ret = call(worker_str, "Worker.DoJob", args_reduce, &reply)
+      if ret  {
+        fmt.Println("wk reduce worker done.\n")
+        mr.registerChannel <- worker_str
+        reduce_sucess = true
+      } else
+      {
+        fmt.Println("wk reduce workerfail.\n")
+      }
     }
-
     DPrintf("reduce finished.")
 
     

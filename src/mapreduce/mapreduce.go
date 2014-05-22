@@ -35,7 +35,7 @@ import "hash/fnv"
 // which Merge() merges into a single output.
 
 // Debugging
-const Debug = 1
+const Debug = 0
 
 func DPrintf(format string, a ...interface{}) (n int, err error) {
 	if Debug > 0 {
@@ -78,7 +78,7 @@ func InitMapReduce(nmap int, nreduce int,
 	mr.file = file
 	mr.MasterAddress = master
 	mr.alive = true
-	mr.registerChannel = make(chan string, 2)
+	mr.registerChannel = make(chan string, 10) //this 2 is newthing I added. It is buffered channel now.
 	mr.DoneChannel = make(chan bool)
     mr.Workers = make(map[string]*WorkerInfo)
     mr.workerNumber = 0
