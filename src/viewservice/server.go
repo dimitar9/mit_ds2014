@@ -17,6 +17,12 @@ type ViewServer struct {
 
 
   // Your declarations here.
+  lastHB map[string]time.Time
+  lastViewNum map[string]uint
+  curView View
+  pendingView View
+
+  flag int
 }
 
 //
@@ -24,8 +30,31 @@ type ViewServer struct {
 //
 func (vs *ViewServer) Ping(args *PingArgs, reply *PingReply) error {
 
-  // Your code here.
+  if vs.curView.Primary != "" {
+	  if vs.curView.Primary == args.Me {
 
+			  vs.pendingView.Viewnum= args.Viewnum + 1//vs.curView.Viewnum+1
+			  fmt.Printf("pending view viewnum is (%v), curView viewnumber is (%v).\n", vs.pendingView.Viewnum, vs.curView.Viewnum)
+			  vs.curView.Viewnum = vs.pendingView.Viewnum
+			  fmt.Printf("view switch!\n")
+
+		  vs.flag = 0
+	  }
+  }
+  // Your code here.
+  if vs.curView.Primary == "" && vs.pendingView.Primary== ""{
+	  vs.curView.Primary = args.Me
+
+	  vs.curView.Viewnum = vs.curView.Viewnum+1
+	  fmt.Println("@@@@increase view Num in ping.Primary")
+  } else if vs.curView.Backup == ""  && vs.curView.Primary != args.Me {
+	  vs.curView.Backup = args.Me
+	  vs.pendingView.Viewnum = vs.curView.Viewnum+1
+	  fmt.Println("@@@@increase view Num in ping Backup")
+  }
+  vs.lastHB[args.Me] = time.Now()
+  vs.lastViewNum[args.Me] = args.Viewnum
+  reply.View = vs.curView
   return nil
 }
 
@@ -35,7 +64,7 @@ func (vs *ViewServer) Ping(args *PingArgs, reply *PingReply) error {
 func (vs *ViewServer) Get(args *GetArgs, reply *GetReply) error {
 
   // Your code here.
-
+  reply.View = vs.curView
   return nil
 }
 
@@ -46,8 +75,40 @@ func (vs *ViewServer) Get(args *GetArgs, reply *GetReply) error {
 // accordingly.
 //
 func (vs *ViewServer) tick() {
+	fmt.Println("@@@@in tick current vienum is ", vs.curView.Viewnum)
+	// Your code here.
+//	fmt.Printf("lastHb curViewPrimary (%v) time now: %v\n", vs.lastHB[vs.curView.Primary], time.Now())
+//	fmt.Printf("lastHb curViewBackup (%v) time now: %v\n", vs.lastHB[vs.curView.Backup], time.Now())
+//    fmt.Printf("diff time is (%v)",time.Now().Sub(vs.lastHB[vs.curView.Primary]))
 
-  // Your code here.
+	if vs.curView.Backup != "" {
+		if time.Now().Sub(vs.lastHB[vs.curView.Backup]) > DeadPings*PingInterval {
+			vs.curView.Backup = ""
+			if vs.flag == 0 {
+				vs.pendingView.Viewnum = vs.curView.Viewnum+1
+				fmt.Println("@@@@increase view Num in curview.Backup")
+				vs.flag = 1
+			}
+
+		}
+	}
+
+	if vs.curView.Primary != "" {
+		if time.Now().Sub(vs.lastHB[vs.curView.Primary]) > DeadPings*PingInterval {
+			if vs.curView.Backup != "" {
+				vs.curView.Primary = vs.curView.Backup
+
+				vs.curView.Backup = ""
+				fmt.Println("make backup empty because bakcup went to primary.\n")
+			}
+			if vs.flag == 0 {
+				vs.pendingView.Viewnum= vs.curView.Viewnum+1
+				fmt.Println("@@@@increase view Num in curview.Primary")
+				vs.flag = 1
+			}
+		}
+	}
+
 }
 
 //
@@ -64,6 +125,11 @@ func StartServer(me string) *ViewServer {
   vs := new(ViewServer)
   vs.me = me
   // Your vs.* initializations here.
+  vs.lastHB = make(map[string]time.Time)
+  vs.lastViewNum = make(map[string]uint)
+  vs.curView = View{Viewnum: 0, Primary: "", Backup: ""}
+  vs.pendingView = View{Viewnum: 0, Primary: "", Backup: ""}
+  vs.flag=0
 
   // tell net/rpc about our RPC server and handlers.
   rpcs := rpc.NewServer()
