@@ -29,28 +29,43 @@ type ViewServer struct {
 // server Ping RPC handler.
 //
 func (vs *ViewServer) Ping(args *PingArgs, reply *PingReply) error {
+  fmt.Printf("received Pring from %v, vienumber is %v\n", args.Me, args.Viewnum)
+  fmt.Printf("current primary is %v current backup is %v\n", vs.curView.Primary, vs.curView.Backup)
+  fmt.Printf("pending primary is %v, pending backup is %v.\n",vs.pendingView.Primary,vs.pendingView.Backup)
+  if (vs.pendingView.Primary != "" && vs.pendingView.Primary==args.Me)  ||(vs.pendingView.Backup!="" && vs.curView.Primary==args.Me) {
+	  fmt.Printf("Ping in case 1\n")
+	  //handle switch over case
+	  vs.flag = 0
+	  vs.curView = vs.pendingView
+	  vs.pendingView.Backup=""
+	  vs.pendingView.Primary=""
+	  vs.pendingView.Viewnum=0
+	  fmt.Printf("switch happening!\n")
+	  fmt.Printf("flag pending is cleared\n")
+  } else if vs.curView.Primary != "" && vs.curView.Primary == args.Me &&  vs.lastViewNum[args.Me] > args.Viewnum {
+	  fmt.Printf("Ping in case 2\n")
+	  vs.flag = 1
+	  vs.pendingView.Primary=vs.curView.Primary //old primary
+	  vs.pendingView.Backup=vs.curView.Backup//old backup
+	  vs.curView.Primary = ""
+	  vs.curView.Primary = vs.curView.Backup
+	  vs.curView.Backup = ""
+	  fmt.Printf("REALONE!!!! flag pending is 1, waiting for ack from %v to clear flag.\n", vs.curView.Primary)
 
-  if vs.curView.Primary != "" {
-	  if vs.curView.Primary == args.Me {
-
-			  vs.pendingView.Viewnum= args.Viewnum + 1//vs.curView.Viewnum+1
-			  fmt.Printf("pending view viewnum is (%v), curView viewnumber is (%v).\n", vs.pendingView.Viewnum, vs.curView.Viewnum)
-			  vs.curView.Viewnum = vs.pendingView.Viewnum
-			  fmt.Printf("view switch!\n")
-
-		  vs.flag = 0
-	  }
-  }
-  // Your code here.
-  if vs.curView.Primary == "" && vs.pendingView.Primary== ""{
-	  vs.curView.Primary = args.Me
-
-	  vs.curView.Viewnum = vs.curView.Viewnum+1
-	  fmt.Println("@@@@increase view Num in ping.Primary")
-  } else if vs.curView.Backup == ""  && vs.curView.Primary != args.Me {
-	  vs.curView.Backup = args.Me
+  } else if vs.curView.Primary == "" && vs.pendingView.Primary== ""{
+	  fmt.Printf("Ping in case 3\n")
+	  vs.pendingView.Primary = args.Me
+	  vs.pendingView.Backup = vs.curView.Backup
 	  vs.pendingView.Viewnum = vs.curView.Viewnum+1
-	  fmt.Println("@@@@increase view Num in ping Backup")
+	  vs.flag = 1
+	  fmt.Println("Initial state, got first ping. Set pending primary and viewnum.")
+
+  } else if vs.pendingView.Backup == ""  && vs.curView.Backup=="" && vs.curView.Primary != args.Me {
+	  fmt.Printf("Ping in case 4\n")
+	  vs.pendingView.Backup = args.Me
+	  vs.pendingView.Primary=vs.curView.Primary
+	  vs.pendingView.Viewnum = vs.curView.Viewnum+1
+	  fmt.Println("initial setup for Backup.")
   }
   vs.lastHB[args.Me] = time.Now()
   vs.lastViewNum[args.Me] = args.Viewnum
@@ -64,6 +79,7 @@ func (vs *ViewServer) Ping(args *PingArgs, reply *PingReply) error {
 func (vs *ViewServer) Get(args *GetArgs, reply *GetReply) error {
 
   // Your code here.
+
   reply.View = vs.curView
   return nil
 }
@@ -75,37 +91,28 @@ func (vs *ViewServer) Get(args *GetArgs, reply *GetReply) error {
 // accordingly.
 //
 func (vs *ViewServer) tick() {
-	fmt.Println("@@@@in tick current vienum is ", vs.curView.Viewnum)
-	// Your code here.
-//	fmt.Printf("lastHb curViewPrimary (%v) time now: %v\n", vs.lastHB[vs.curView.Primary], time.Now())
-//	fmt.Printf("lastHb curViewBackup (%v) time now: %v\n", vs.lastHB[vs.curView.Backup], time.Now())
-//    fmt.Printf("diff time is (%v)",time.Now().Sub(vs.lastHB[vs.curView.Primary]))
-
+	fmt.Println("Get in tick, current vienum is ", vs.curView.Viewnum)
 	if vs.curView.Backup != "" {
 		if time.Now().Sub(vs.lastHB[vs.curView.Backup]) > DeadPings*PingInterval {
-			vs.curView.Backup = ""
-			if vs.flag == 0 {
-				vs.pendingView.Viewnum = vs.curView.Viewnum+1
-				fmt.Println("@@@@increase view Num in curview.Backup")
-				vs.flag = 1
-			}
-
+			fmt.Println("backup timed out. set pending backup to empty")
+			vs.pendingView.Backup = ""
+			vs.flag = 1
 		}
 	}
 
 	if vs.curView.Primary != "" {
 		if time.Now().Sub(vs.lastHB[vs.curView.Primary]) > DeadPings*PingInterval {
+			vs.curView.Primary=""
 			if vs.curView.Backup != "" {
-				vs.curView.Primary = vs.curView.Backup
 
-				vs.curView.Backup = ""
-				fmt.Println("make backup empty because bakcup went to primary.\n")
-			}
-			if vs.flag == 0 {
-				vs.pendingView.Viewnum= vs.curView.Viewnum+1
-				fmt.Println("@@@@increase view Num in curview.Primary")
+				//change pending view before ack.
+				vs.pendingView.Primary = vs.curView.Backup
+				vs.pendingView.Backup=""
 				vs.flag = 1
+				vs.pendingView.Viewnum =vs.curView.Viewnum+1
+				fmt.Printf("Primary Timedout! Change pending view.\n make its backup empty because bakcup went to primary current primary is still %v.\n", vs.curView.Primary)
 			}
+
 		}
 	}
 
