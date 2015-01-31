@@ -5,7 +5,6 @@ import "net/rpc"
 import "log"
 import "time"
 import "sync"
-import "fmt"
 import "os"
 
 type ViewServer struct {
@@ -27,9 +26,9 @@ type ViewServer struct {
 // server Ping RPC handler.
 //
 func (vs *ViewServer) Ping(args *PingArgs, reply *PingReply) error {
-	fmt.Printf("received Pring from %v, vienumber is %v\n", args.Me, args.Viewnum)
-	fmt.Printf("current primary is %v current backup is %v cur num is %v\n", vs.curView.Primary, vs.curView.Backup, vs.curView.Viewnum)
-	fmt.Printf("pending primary is %v, pending backup is %v.pen num is %v\n", vs.pendingView.Primary, vs.pendingView.Backup, vs.pendingView.Viewnum)
+	DPrintf("received Pring from %v, vienumber is %v\n", args.Me, args.Viewnum)
+	DPrintf("current primary is %v current backup is %v cur num is %v\n", vs.curView.Primary, vs.curView.Backup, vs.curView.Viewnum)
+	DPrintf("pending primary is %v, pending backup is %v.pen num is %v\n", vs.pendingView.Primary, vs.pendingView.Backup, vs.pendingView.Viewnum)
 	if vs.curView.Primary == args.Me && vs.curView.Viewnum < args.Viewnum {
 		vs.curView.Viewnum = args.Viewnum
 	}
@@ -37,11 +36,11 @@ func (vs *ViewServer) Ping(args *PingArgs, reply *PingReply) error {
 
 		vs.curView.Primary = args.Me
 		vs.curView.Viewnum = 1
-		fmt.Printf("Ping in case 0\n")
+		DPrintf("Ping in case 0\n")
 	} else if vs.lastViewNum[vs.curView.Primary] == vs.curView.Viewnum && vs.flag == 1 && (vs.pendingView.Primary != "" && vs.curView.Primary == args.Me) || (vs.pendingView.Backup != "" && vs.curView.Primary == args.Me) {
-		fmt.Printf("Ping in case 1\n")
+		DPrintf("Ping in case 1\n")
         if vs.pendingView.Viewnum == 0 {
-			fmt.Println("ignoreing switch because backup is not initizliaed.(in Ping)")
+			DPrintf("ignoreing switch because backup is not initizliaed.(in Ping)\n")
 		} else {
 			//handle switch over case
 			vs.flag = 0
@@ -50,34 +49,34 @@ func (vs *ViewServer) Ping(args *PingArgs, reply *PingReply) error {
 			vs.pendingView.Backup = ""
 			vs.pendingView.Primary = ""
 			vs.pendingView.Viewnum = 0
-			fmt.Printf("switch happening!\n")
-			fmt.Printf("flag pending is cleared\n")
+			DPrintf("switch happening!\n")
+			DPrintf("flag pending is cleared\n")
 		}
 	} else if vs.curView.Primary != "" && vs.curView.Primary == args.Me && vs.lastViewNum[args.Me] > args.Viewnum {
-		fmt.Printf("Ping in case 2\n")
-		fmt.Printf("vs.lastViewNumber is %v, argsViewnum is %v", vs.lastViewNum[args.Me], args.Viewnum)
+		DPrintf("Ping in case 2\n")
+		DPrintf("vs.lastViewNumber is %v, argsViewnum is %v", vs.lastViewNum[args.Me], args.Viewnum)
 
 		vs.flag = 1
 		vs.pendingView.Primary = vs.curView.Backup
 		vs.pendingView.Backup = vs.curView.Primary
 		vs.pendingView.Viewnum = vs.curView.Viewnum
-		fmt.Printf("Restarted Primary met.\n")
+		DPrintf("Restarted Primary met.\n")
 
 	} else if vs.curView.Primary == "" && vs.pendingView.Primary == "" {
-		fmt.Printf("Ping in case 3\n")
+		DPrintf("Ping in case 3\n")
 		vs.pendingView.Primary = args.Me
 		vs.pendingView.Backup = vs.curView.Backup
 		vs.pendingView.Viewnum = vs.curView.Viewnum + 1
 		vs.flag = 1
-		fmt.Println("Initial state, got first ping. Set pending primary and viewnum.")
+		DPrintf("Initial state, got first ping. Set pending primary and viewnum.\n")
 
 	} else if vs.pendingView.Backup == "" && vs.curView.Backup == "" && vs.curView.Primary != args.Me {
 
-			fmt.Printf("Ping in case 4\n")
+			DPrintf("Ping in case 4\n")
 			vs.pendingView.Backup = args.Me
 			vs.pendingView.Primary = vs.curView.Primary
 			vs.pendingView.Viewnum = vs.curView.Viewnum+1
-			fmt.Println("initial setup for Backup.")
+			DPrintf("initial setup for Backup.\n")
 
 	}
 	vs.lastHB[args.Me] = time.Now()
@@ -92,7 +91,7 @@ func (vs *ViewServer) Ping(args *PingArgs, reply *PingReply) error {
 func (vs *ViewServer) Get(args *GetArgs, reply *GetReply) error {
 
 	// Your code here.
-	fmt.Printf("Get() called. vs.curView.viewNum is %v. \n", vs.curView.Viewnum)
+	DPrintf("Get() called. vs.curView.viewNum is %v. \n", vs.curView.Viewnum)
 	reply.View = vs.curView
 	return nil
 }
@@ -103,10 +102,10 @@ func (vs *ViewServer) Get(args *GetArgs, reply *GetReply) error {
 // accordingly.
 //
 func (vs *ViewServer) tick() {
-	fmt.Println("Get in tick, current vienum is ", vs.curView.Viewnum)
+	DPrintf("Get in tick, current vienum is %v\n", vs.curView.Viewnum)
 	if vs.curView.Backup != "" {
 		if time.Now().Sub(vs.lastHB[vs.curView.Backup]) > DeadPings*PingInterval {
-			fmt.Println("backup timed out. set pending backup to empty")
+			DPrintf("backup timed out. set pending backup to empty\n")
 			vs.curView.Backup=""
 			vs.pendingView.Primary = vs.curView.Primary
 			vs.pendingView.Backup = ""
@@ -121,13 +120,13 @@ func (vs *ViewServer) tick() {
 			if vs.curView.Backup != "" {
 				if vs.flag == 0 && vs.lastViewNum[vs.curView.Primary] == vs.curView.Viewnum {
 					if vs.lastViewNum[vs.curView.Backup]==0 {
-						fmt.Println("ignoreing switch because backup is not initizliaed.(in Ping)")
+						DPrintf("ignoreing switch because backup is not initizliaed.(in Ping)\n")
 					} else {
 						vs.curView.Primary = vs.curView.Backup
 						vs.curView.Backup = ""
 						vs.curView.Viewnum++
-						fmt.Printf("Primary Timedout! switch immediately because flag is 0.\n")
-						fmt.Printf("new cur viewnumber is %v\n", vs.curView.Viewnum)
+						DPrintf("Primary Timedout! switch immediately because flag is 0.\n")
+						DPrintf("new cur viewnumber is %v\n", vs.curView.Viewnum)
 					}
 				} else {
 
@@ -136,7 +135,7 @@ func (vs *ViewServer) tick() {
 					vs.pendingView.Backup = ""
 					vs.flag = 1
 					vs.pendingView.Viewnum = vs.curView.Viewnum + 1
-					fmt.Printf("Primary Timedout! Change pending view.\n make its backup empty because bakcup went to primary current primary is still %v.\n", vs.curView.Primary)
+					DPrintf("Primary Timedout! Change pending view.\n make its backup empty because bakcup went to primary current primary is still %v.\n", vs.curView.Primary)
 				}
 			}
 
@@ -191,7 +190,7 @@ func StartServer(me string) *ViewServer {
 				conn.Close()
 			}
 			if err != nil && vs.dead == false {
-				fmt.Printf("ViewServer(%v) accept: %v\n", me, err.Error())
+				DPrintf("ViewServer(%v) accept: %v\n", me, err.Error())
 				vs.Kill()
 			}
 		}
